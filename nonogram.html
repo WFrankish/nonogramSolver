@@ -8,6 +8,8 @@
 </head>
 
 <body>
+  <script src="nonogram.js"></script>
+
   <h1>Nonogram Solver</h1>
   <h2>By William Frankish</h2>
   <p>
@@ -19,15 +21,41 @@
     Sorry, this demo requires JavaScript.
   </noscript>
   
-  <canvas id="myCanvas" width="200" height="100">
-  </canvas>
+  <div id="main">
+    <div id="settings">
+      <form>
+        Width:<br>
+        <input 
+          id="nonoWidth" 
+          type="number" 
+          name="Width" 
+          value="10"        
+          min="1"
+        ><br>
+        Height:<br>
+        <input 
+          id="nonoHeight" 
+          type="number" 
+          name="Height" 
+          value="10"
+          min="1"
+        ><br>
+        <input type="button" onclick="makeGrid()" name="" value="go">
+      </form>
+    </div>
+    <div id="nonogram">
+      <div id="vertical"></div>
+      <div id="horizontal"></div>
+      <canvas id="myCanvas" width="600" height="300"></canvas>
+      <div id="solve"></div>
+      <div id="errors"></div>
+    </div>
+  </div>
   
   <p>
     Source code available at https://github.com/WFrankish/nonogramSolver.git
   </p>
   
 </body>
-
-<script src="nonogram.js"></script>
 
 </html>
