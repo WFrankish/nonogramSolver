@@ -3,26 +3,30 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nonogram Solver</title>
   <link rel="stylesheet" href="nonogram.css" />
 </head>
 
 <body>
   <script src="nonogram.js"></script>
-
-  <h1>Nonogram Solver</h1>
-  <h2>By William Frankish</h2>
-  <p>
-    A solver for Nonogram puzzles, a.k.a Picross<br>
-    Version 0.0.1
-  </p>
+  <div class="title">
+    <h1>Nonogram Solver</h1>
+  </div>
+  <div class="header">
+    <h2>By William Frankish</h2>
+    <p>
+      A solver for Nonogram puzzles, a.k.a Picross<br>
+      Version 0.0.1
+    </p>
+  </div>
   
   <noscript>
     Sorry, this demo requires JavaScript.
   </noscript>
   
-  <div id="main">
-    <div id="settings">
+  <div class="row">
+    <div class="col-2 col-m-12">
       <form>
         Width:<br>
         <input 
@@ -43,18 +47,24 @@
         <input type="button" onclick="makeGrid()" name="" value="go">
       </form>
     </div>
-    <div id="nonogram">
-      <div id="vertical"></div>
-      <div id="horizontal"></div>
-      <canvas id="myCanvas" width="600" height="300"></canvas>
-      <div id="solve"></div>
-      <div id="errors"></div>
+    <div class="row">
+      <div class="col-2 col-m-12"></div>
+      <div class="col-10 col-m-12" id="horizontal"></div>
+      <div class="col-2 col-m-12" id="vertical"></div>
+      <div class="col-8 col-m-12 canvas" id="canvasDiv" >
+        <canvas id="myCanvas">Your browser does not support canvas</canvas>
+      </div>
+      <div class="col-2 col-m-12"></div>
+      <div class="col-2 col-m-2" id="solve"></div>
+      <div class="col-8 col-m-10" id="errors"></div>
     </div>
   </div>
   
-  <p>
-    Source code available at https://github.com/WFrankish/nonogramSolver.git
-  </p>
+  <div class="footer">
+    <p>
+      Source code available at https://github.com/WFrankish/nonogramSolver.git
+    </p>
+  </div>
   
 </body>
 
