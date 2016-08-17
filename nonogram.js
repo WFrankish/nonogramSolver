@@ -1,5 +1,7 @@
 // HTML5 canvas context and size;
+var canvas;
 var ctx;
+var div;
 var canvWidth;
 var canvHeight;
 
@@ -12,19 +14,21 @@ var horiLines;
 
 var errors;
 
+// A rule for a line specifying the groups of squares to fill in
 class Line {
   constructor (numbers){
     this.numbers = numbers;
+    // Is this line solved on the grid?
     this.solved = false;
+    // Has something changed on the grid with this line?
     this.newInfo = false;
   }
 }
 
-
 var COLORS = {
   BG : "#dedbff",
   UNKNOWN : "#6b6d94",
-  EMPTY : "#FFFFFF",
+  EMPTY : "#ffffff",
   FILLED : "#212494",
 }
 
@@ -34,42 +38,39 @@ var TOKENS = {
   FILLED : { value: 3, color: COLORS.FILLED },
 }
 
-window.onload = function(){
+window.onload = getElements;
+
+function getElements(){
   errors = document.getElementById("errors");
-  var canvas = document.getElementById("myCanvas");
-  var div = document.getElementById("canvasDiv");
+  canvas = document.getElementById("myCanvas");
+  div = document.getElementById("canvasDiv");
   ctx = canvas.getContext("2d");
+  resizeCanvas();
+  resetGrid();
+}
+
+window.onresize = resizeCanvas;
+
+function resizeCanvas(){
   canvWidth = div.clientWidth-15;
   canvas.width = canvWidth;
   canvHeight = div.clientHeight;
   canvas.height = canvHeight;
-  console.log(canvHeight);
   drawGrid();
 }
 
-window.onresize= function(){
-  var canvas = document.getElementById("myCanvas");
-  var div = document.getElementById("canvasDiv");
-  ctx = canvas.getContext("2d");
-  canvWidth = div.clientWidth-15;
-  canvas.width = canvWidth;
-  canvHeight = div.clientHeight;
-  canvas.height = canvHeight;
-  console.log(canvHeight);
-  drawGrid();
-}
-
-function makeGrid(){
+function resetGrid(){
   nonoWidth = document.getElementById("nonoWidth").value;
   nonoHeight = document.getElementById("nonoHeight").value;
   var horizontal = document.getElementById("horizontal");
   var vertical = document.getElementById("vertical");
-  horizontal.innerHTML = "Horizontal: "
-  vertical.innerHTML = "Vertical: ";
+  horizontal.innerHTML = "Horizontal:<br> "
+  vertical.innerHTML = "Vertical:<br> ";
   grid = []
   for(var y  = 0; y < nonoHeight; y++){
     horizontal.innerHTML += '<input' +
       ' id="hori' + y + '"' +
+      ' class="hori"' +
       ' type="text"' +
       ' name="words"' +
       ' value="0"' +
@@ -79,6 +80,7 @@ function makeGrid(){
   for(var x = 0; x < nonoWidth; x++){
     vertical.innerHTML += '<input' +
       ' id="vert' + x + '"' +
+      ' class="vert"' +
       ' type="text"' +
       ' name="words"' +
       ' value="0"' +
@@ -138,39 +140,42 @@ function drawGrid(){
 
 function solve(){
   errors.innerHTML = '';
-  for(var x = 0; x < nonoWidth; x++){
-    var input = document.getElementById("vert"+x).value;
-    try{
+  for(var x in grid){
+    for(var y in grid[x]){
+      grid[x][y] = TOKENS.UNKNOWN;
+    }
+  }
+  vertLines = [];
+  horiLines = [];
+  try{
+    for(var x = 0; x < nonoWidth; x++){
+      var input = document.getElementById("vert"+x).value;
       vertLines.push(new Line(sanitizeInput(input)));
-    }catch (err){
-      errors.innerHTML = err;
-      return;
     }
-  }
-  for(var y = 0; y < nonoHeight; y++){
-    var input = document.getElementById("hori"+y).value;
-    try{
+    for(var y = 0; y < nonoHeight; y++){
+      var input = document.getElementById("hori"+y).value;
       horiLines.push(new Line(sanitizeInput(input)));
-    }catch (err){
-      errors.innerHTML = err;
-      return;
     }
-  }
-  for(var x in vertLines){
-    initialTestVertical(x);
-    drawGrid();
-  }
-  for(var y in horiLines){
-    initialTestHorizontal(y);
-    drawGrid();
-  }
-  while(canTestVertical + canTestHorizontal > 0){
-  
-  }
-  if(isSolved()){
-    errors.innerHTML = "Solved!"
-  } else {
-    errors.innerHTML = "Could not solve"
+    for(var x in vertLines){
+      vertLines[x].solved = 
+        placeSquaresVertical(x, 0, nonoHeight, vertLines[x].numbers);
+      drawGrid();
+    }
+    for(var y in horiLines){
+      horiLines[y].solved = 
+        placeSquaresHorizontal(0, nonoWidth, y, horiLines[y].numbers);
+      drawGrid();
+    }
+    /*while(canTestVertical + canTestHorizontal > 0){
+    
+    }*/
+    if(isSolved()){
+      errors.innerHTML = "Solved!"
+    } else {
+      errors.innerHTML = "Could not solve"
+    }
+  } catch (err) {
+    errors.innerHTML = err;
   }
 }
 
@@ -179,31 +184,38 @@ function sanitizeInput(input){
   var temp = input.split(" ");
   for(var i in temp){
     if(temp[i] != ""){
+      // convert to number
       var num = temp[i]*1;
       if(num != num){
         // only NaN does not equal itself
         throw "Input contains non-numbers"
-      } else if (num == 0 && temp.length > 1){
-        throw "Contains zero length chains"
+      } else if (num == 0){
+        if(temp.length > 1) throw "Contains zero length chains";
+        // else do nothing;
       } else {
         result.push(num);
       }
     }
   }
-  if(result.length == 0){
-    result = [0];
-  }
   return result;
 }
 
 function markVertical(x, y, token){
-  grid[x][y] = token;
-  horiLines[y].newInfo = true;
+  if(grid[x][y] == TOKENS.UNKNOWN){
+    grid[x][y] = token;
+    horiLines[y].newInfo = true;
+  } else if (grid[x][y] != token){
+    throw "Contradiction reached."
+  }
 }
 
 function markHorizontal(x, y, token){
-  grid[x][y] = token;
-  vertLines[x].newInfo = true;
+  if(grid[x][y] == TOKENS.UNKNOWN){
+    grid[x][y] = token;
+    vertLines[y].newInfo = true;
+  } else if (grid[x][y] != token){
+    throw "Contradiction reached."
+  }
 }
 
 function canTestHorizontal(){
@@ -262,46 +274,58 @@ function maxValue(numList){
   return result;
 }
 
-function initialTestVertical(x){
-  if(arrayEquals(vertLines[x].numbers, [0])){
-    for(var y = 0; y < nonoHeight; y++){
-      markVertical(x, y, TOKENS.EMPTY);
-      vertLines[x].solved = true;
-    } 
-  }
-  else {
-    var max = maxValue(vertLines[x].numbers);
-    var size = sumWithGaps(vertLines[x].numbers);
-    if(size == nonoHeight){
-      var y = 0;
-      for(var i in vertLines[x].numbers){
-        for(var j = 0; j < vertLines[x].numbers[i]; j++){
-          markVertical(x, y, TOKENS.FILLED);
-          y++;
+// places a string of squares if can, and returns true if squares were placed in
+// every spot
+function placeSquaresVertical(x, y1, y2, numList){
+  if(numList.length == 0){
+    for(var yi = y1; yi<y2; yi++){
+      markVertical(x, yi, TOKENS.EMPTY);
+    }
+    return true;
+  } else {
+    var max = maxValue(numList);
+    var size = sumWithGaps(numList);
+    var dif = (y2-y1) - size;
+    var yi = y1;
+    for(var i in numList){
+      for(var j = 0; j < numList[i]; j++){
+        if(j >= dif){
+          markVertical(x, yi, TOKENS.FILLED);
         }
-        if(y < nonoHeight){
-          markVertical(x, y, TOKENS.EMPTY);
-          y++;
-        }
+        yi++;
       }
-      vertLines[x].solved = true;
+      if(yi < y2 && dif == 0){
+        markVertical(x, yi, TOKENS.EMPTY);
+      }
+      yi++;
     }
-    else if(nonoHeight - size < max){
-    
-    }
+    return dif == 0;
   }
 }
 
-function initialTestHorizontal(y){
-
-}
-
-function arrayEquals(a, b){
-  if(a===b) return true;
-  if(a == null || b == null) return false;
-  if(a.length != b.length) return false;
-  for(var i = 0; i<a.length; i++){
-    if(a[i]!==b[i]) return false;
+function placeSquaresHorizontal(x1, x2, y, numList){
+  if(numList.length == 0){
+    for(var xi = x1; xi<x2; xi++){
+      markHorizontal(xi, y, TOKENS.EMPTY);
+    }
+    return true;
+  } else {
+    var max = maxValue(numList);
+    var size = sumWithGaps(numList);
+    var dif = (x2-x1) - size;
+    var xi = x1;
+    for(var i in numList){
+      for(var j = 0; j < numList[i]; j++){
+        if(j >= dif){
+          markHorizontal(xi, y, TOKENS.FILLED);
+        }
+        xi++;
+      }
+      if(xi < x2 && dif == 0){
+        markHorizontal(xi, y, TOKENS.EMPTY);
+      }
+      xi++;
+    }
+    return dif == 0;
   }
-  return true;
 }

@@ -13,6 +13,9 @@
   <div class="title">
     <h1>Nonogram Solver</h1>
   </div>
+  <div class="dummy-title">
+    <h1>Nonogram Solver</h1>
+  </div>
   <div class="header">
     <h2>By William Frankish</h2>
     <p>
@@ -26,8 +29,10 @@
   </noscript>
   
   <div class="row">
-    <div class="col-2 col-m-12">
-      <form>
+    <div class="col-8 col-m-8 pad1" id="errors"></div>
+    <div class="col-4 col-m-4 pad1" id="solve"></div>
+    <div class="col-2 col-m-12 pad1">
+      <div class="col-6 col-m-6">
         Width:<br>
         <input 
           id="nonoWidth" 
@@ -35,7 +40,9 @@
           name="Width" 
           value="10"        
           min="1"
-        ><br>
+        >
+      </div>
+      <div class="col-6 col-m-6">
         Height:<br>
         <input 
           id="nonoHeight" 
@@ -43,20 +50,18 @@
           name="Height" 
           value="10"
           min="1"
-        ><br>
-        <input type="button" onclick="makeGrid()" name="" value="go">
-      </form>
+        >
+      </div>
+      <div class="col-12 col-m-12">
+        <input type="button" onclick="resetGrid()" name="" value="Reset Grid">
+      </div>
     </div>
-    <div class="row">
-      <div class="col-2 col-m-12"></div>
-      <div class="col-10 col-m-12" id="horizontal"></div>
-      <div class="col-2 col-m-12" id="vertical"></div>
-      <div class="col-8 col-m-12 canvas" id="canvasDiv" >
+    <div class="col-10 col-m-12 pad1" id="vertical"></div>
+    <div class="col-12 col-m-12">
+      <div class="col-2 col-m-12 pad1" id="horizontal"></div>
+      <div class="col-10 col-m-12 canvas pad1" id="canvasDiv" >
         <canvas id="myCanvas">Your browser does not support canvas</canvas>
       </div>
-      <div class="col-2 col-m-12"></div>
-      <div class="col-2 col-m-2" id="solve"></div>
-      <div class="col-8 col-m-10" id="errors"></div>
     </div>
   </div>
   

@@ -1,10 +1,6 @@
 * {
   box-sizing: border-box;
 }
-.row{
-  padding-left: 15px;
-  padding-right: 30px;
-}
 .row::after {
   content: "";
   clear: both;
@@ -12,9 +8,10 @@
 }
 [class*="col-"] {
   float: left;
-  padding: 15px;
 }
-
+.pad1{
+  padding: 20px;
+}
 html {
   font-family: "Ariel", Helvetica, sans-serif;
   background-color: #dedbff;
@@ -29,21 +26,61 @@ body{
   color: #ffffff;
   padding-left: 15px;
   padding-right: 15px;
-  padding-top: 1px;
   position: fixed;
   top: 0;
-  height: 75px;
   width: 100%;
-  overflow: hidden;
+}
+.dummy-title {
+  background-color: #212494;
+  color: #ffffff;
+  padding-left: 15px;
+  padding-right: 15px;
+  width: 100%;
 }
 .header {
   background-color: #212494;
   color: #ffffff;
   padding-left: 15px;
   padding-right: 15px;
-  padding-bottom: 1px;
-  margin-top: 75px;
+  padding-bottom: 5px;
   width: 100%;
+}
+.hori{
+  width: 80%;
+  padding: 12px 20px;
+  box-sizing: border-box;
+}
+.vert{
+  width: 10%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+input[type=number]{
+  width: 100%;
+  padding: 6px 10px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+input[type=button]{
+  background-color: #212494;
+  border: none;
+  color: #ffffff;
+  text-align: center;
+  font-size: 12px;
+  width: 100%;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 5px #6b6d94;
+}
+input[type=button]:active{
+  transform: translateY(4px);
+  box-shadow: 0 1px #6b6d94;
+}
+.canvas {
+  padding: = 0;
+  margin: = 0;
+  height: 400px;
 }
 .footer {
   background-color: #6b6d94;
@@ -52,15 +89,9 @@ body{
   padding-right: 15px;
   padding-top: 1px;
   padding-bottom: 1px;
+  margin-top: 20px;
   width: 100%;
-  float: bottom;
 }
-.canvas {
-  padding: = 0;
-  margin: = 0;
-  height: 500px;
-}
-
 
 /* Mobile Screens */
 [class*="col-"] {
