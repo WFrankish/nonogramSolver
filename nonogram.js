@@ -34,57 +34,7 @@ var ORIENTATION = {
   VERTICAL : 1,
 }
 
-// A rule for a line specifying the groups of squares to fill in
-class Line {
-  constructor(constraints, orientation){
-    this.constraints = constraints;
-    // Has something changed on the grid with this line?
-    this.newInfo = false;
-    // Orientation
-    this.orientation = orientation;
-    // Sequences
-    this.sequences = new SequenceList(constraints, orientation);
-  }
-  solved(){
-    return this.sequences.solved;
-  }
-}
-
-class Sequence {
-  constructor(type, start, end, lowest, highest){
-    this.type = type;
-    this.start = start;
-    this.end = end;
-    this.lowestIndex = lowest;
-    this.hightestIndex = highest;
-  }
-}
-
-class SequenceList {
-  constructor(constraints, orientation){
-    this.list = [];
-    if(orientation == ORIENTATION.VERTICAL){
-      this.list.push(new Sequence(
-        TOKENS.UNKNOWN, 
-        0, nonoHeight, 
-        -0.5, constraints.length-0.5));
-    } else {
-      this.list.push(new Sequence(
-        TOKENS.UNKNOWN, 
-        0, nonoWidth, 
-        -0.5, constraints.length-0.5));
-    }
-  }
-  solved(){
-    return this.list.length == 0;
-  }
-  start(){
-    return this.list[0].start;
-  }
-  end(){
-    return this.list[this.list.length-1].end;
-  }
-}
+// classes moved to bottom due to size on internal functions
 
 window.onload = getElements;
 
@@ -109,8 +59,8 @@ function resizeCanvas(){
 
 function resetGrid(){
   clearTimeout(currentTimeout);
-  nonoWidth = document.getElementById("nonoWidth").value;
-  nonoHeight = document.getElementById("nonoHeight").value;
+  nonoWidth = document.getElementById("nonoWidth").value * 1;
+  nonoHeight = document.getElementById("nonoHeight").value * 1;
   var horizontal = document.getElementById("horizontal");
   var vertical = document.getElementById("vertical");
   var horiHTML = "Horizontal:<br> "
@@ -165,8 +115,10 @@ function drawGrid(){
     blockWidth = blockHeight;
   }
   // alter border size so grid is centred
-  horiBorder = Math.trunc( ( canvWidth - ((blockWidth + 1) * nonoWidth - 1) ) / 2 );
-  vertBorder = Math.trunc( ( canvHeight - ((blockHeight + 1) * nonoHeight - 1) ) / 2 );
+  horiBorder = 
+    Math.trunc( ( canvWidth - ((blockWidth + 1) * nonoWidth - 1) ) / 2 );
+  vertBorder = 
+    Math.trunc( ( canvHeight - ((blockHeight + 1) * nonoHeight - 1) ) / 2 );
   horiPos = horiBorder;
   for(var x = 0; x < nonoWidth; x++){
     vertPos = vertBorder;
@@ -190,7 +142,7 @@ function sanitizeInput(input){
         // only NaN does not equal itself
         throw "Input contains non-numbers"
       } else if (num == 0){
-        if(temp.length > 1) throw "Contains zero length chains";
+        if(temp.length > 1) throw "zero";
         // else do nothing;
       } else {
         result.push(num);
@@ -217,12 +169,12 @@ function canTest(){
 
 function isSolved(){
   for(var y in vertLines){
-    if(!vertLines[y].solved()){
+    if(!vertLines[y].isSolved()){
       return false;
     }
   }
   for(var x in horiLines){
-    if(!horiLines[x].solved()){
+    if(!horiLines[x].isSolved()){
       return false;
     }
   }
@@ -251,12 +203,21 @@ function maxValue(numList){
   return result;
 }
 
-function mark(x, y, token, orientation){
+function placeSquare(x, y, token, orientation, index){
   if(grid[x][y] == TOKENS.UNKNOWN){
     grid[x][y] = token;
-    if(orientation == ORIENTATION.HORIZONTAL){
+    if(orientation == ORIENTATION.VERTICAL){
+      vertLines[x].add(y, token, index);
+      // likely to call mark several times on same x, so don't simplify
+      horiLines[y].addBlind(x, token);
+      horiLines[y].simplify();
       horiLines[y].newInfo = true;
+      
     } else {
+      horiLines[y].add(x, token, index);
+      // likely to call mark several times on same y, so don't simplify
+      vertLines[x].addBlind(y, token);
+      horiLines[y].simplify();
       vertLines[x].newInfo = true;
     }
   } else if (grid[x][y] != token){
@@ -266,14 +227,15 @@ function mark(x, y, token, orientation){
 
 // places a string of squares if can, and returns true if squares were placed in
 // every spot
-function placeSquares(a, b, c, numList){
-  if(numList.orientation = ORIENTATION.VERTICAL){
+function placeSquares(a, b, c, line, minIndex = 0, maxIndex = Infinity){
+  var numList = line.constraints.slice(minIndex, maxIndex);
+  if(line.orientation == ORIENTATION.VERTICAL){
     var x = a;
     var y1 = b;
     var y2 = c;
     if(numList.length == 0){
       for(var yi = y1; yi<y2; yi++){
-        mark(x, yi, TOKENS.EMPTY, ORIENTATION.VERTICAL);
+        placeSquare(x, yi, TOKENS.EMPTY, ORIENTATION.VERTICAL, -0.5);
       }
     } else {
       var max = maxValue(numList);
@@ -286,24 +248,25 @@ function placeSquares(a, b, c, numList){
         for(var i in numList){
           for(var j = 0; j < numList[i]; j++){
             if(j >= dif){
-              mark(x, yi, TOKENS.FILLED, ORIENTATION.VERTICAL);
+              placeSquare(x, yi, TOKENS.FILLED, ORIENTATION.VERTICAL, i*1);
             }
             yi++;
           }
           if(yi < y2 && dif == 0){
-            mark(x, yi, TOKENS.EMPTY, ORIENTATION.VERTICAL);
+            placeSquare(x, yi, TOKENS.EMPTY, ORIENTATION.VERTICAL, (i*1)+0.5);
           }
           yi++;
         }
       }
     }
+    vertLines[x].simplify();
   } else {
     var x1 = a;
     var x2 = b;
     var y = c;
     if(numList.length == 0){
       for(var xi = x1; xi<x2; xi++){
-        mark(xi, y, TOKENS.EMPTY, ORIENTATION.HORIZONTAL);
+        placeSquare(xi, y, TOKENS.EMPTY, ORIENTATION.HORIZONTAL, -0.5);
       }
     } else {
       var max = maxValue(numList);
@@ -316,17 +279,176 @@ function placeSquares(a, b, c, numList){
         for(var i in numList){
           for(var j = 0; j < numList[i]; j++){
             if(j >= dif){
-              mark(xi, y, TOKENS.FILLED, ORIENTATION.HORIZONTAL);
+              placeSquare(xi, y, TOKENS.FILLED, ORIENTATION.HORIZONTAL, i*1);
             }
             xi++;
           }
           if(xi < x2 && dif == 0){
-            mark(xi, y, TOKENS.EMPTY, ORIENTATION.HORIZONTAL);
+            placeSquare(xi, y, TOKENS.EMPTY, ORIENTATION.HORIZONTAL, (i*1)+0.5);
           }
           xi++;
         }
       }
     }
+    horiLines[y].simplify();
+  }
+}
+
+// A rule for a line specifying the groups of squares to fill in
+class Line {
+  constructor(constraints, orientation){
+    this.constraints = constraints;
+    // Has something changed on the grid with this line?
+    this.newInfo = false;
+    // Orientation
+    this.orientation = orientation;
+    // Chains
+    this.chains = [];
+    if(orientation == ORIENTATION.VERTICAL){
+      this.chains.push(new Chain(
+        TOKENS.UNKNOWN, 
+        0, nonoHeight, 
+        -0.5, constraints.length-0.5));
+    } else {
+      this.chains.push(new Chain(
+        TOKENS.UNKNOWN, 
+        0, nonoWidth, 
+        -0.5, constraints.length-0.5));
+    }
+  }
+  isSolved(){
+    return this.chains.length == 0;
+  }
+  start(){
+    return this.chains[0].start;
+  }
+  end(){
+    return this.chains[this.chains.length-1].end;
+  }
+  check(){
+    for(var i in this.chains){
+      if(this.chains[i].lowestIndex > this.chains[i].highestIndex){
+        throw "contradiction";
+      }
+    }
+  }
+  simplify(){
+    while(this.chains.length > 0 && this.chains[0].type == TOKENS.EMPTY){
+      this.chains.shift();
+    }
+    while(this.chains.length > 0 && this.chains[this.chains.length-1] == TOKENS.EMPTY){
+      this.chains.pop();
+    }
+    var i = 1;
+    var prev = this.chains[0];
+    while(i < this.chains.length){
+      var cur = this.chains[i];
+      if(cur.type == prev.type){
+        this.chains.splice(i, 1);
+        prev.end = cur.end;
+        prev.lowestIndex = cur.lowestIndex;
+      } else if(prev.type == TOKENS.UNKNOWN && 
+        cur.highestIndex < prev.highestIndex
+      ) {
+        prev.highestIndex = cur.HighestIndex;
+      } else if(cur.type == TOKENS.UNKNOWN && 
+        cur.lowestIndex < prev.lowestIndex
+      ) {
+        cur.lowestIndex = prev.lowestIndex;     
+      } else {
+        // types differ but neither are unknown;
+        if(cur.highestIndex < prev.highestIndex){
+          prev.highestIndex = cur.HighestIndex - 0.5;
+        }
+        if(cur.lowestIndex < prev.lowestIndex){
+          cur.lowestIndex = prev.lowestIndex + 0.5;
+        }
+      }
+      prev = cur;
+      i++;
+    }
+    this.check();
+  }
+  addBlind(xy, token){
+    var i = 0;
+    while(this.chains[i].end < xy+1){
+      i++;
+    }
+    var newLow;
+    var newHigh;
+    if(token == TOKENS.FILLED){
+      newLow = Math.ceil(this.chains[i].lowestIndex);
+      newHigh = Math.floor(this.chains[i].highestIndex);
+    } else {
+      newLow = Math.ceil(this.chains[i].lowestIndex-0.5)+0.5;
+      newHigh = Math.floor(this.chains[i].highestIndex+0.5)-0.5;
+    }
+    if(this.chains[i].end == xy+1){
+      this.chains[i].end = xy;
+      this.chains[i].highestIndex = newHigh;
+      if(this.chains[i].start == this.chains[i].end){
+        this.chains[i] = new Chain(token, xy, xy+1, newLow, newHigh);
+      } else {
+        this.chains.splice(i+1, 0, new Chain(token, xy, xy+1, newLow, newHigh));
+      }
+    } else {
+      var oldEnd = this.chains[i].end;
+      var oldHigh = this.chains[i].highestIndex;
+      this.chains[i].end = xy;
+      this.chains[i].highestIndex = newHigh;
+      if(this.chains[i].start == this.chains[i].end){
+        this.chains.splice(i, 1, 
+          new Chain(token, xy, xy+1, newLow, newHigh),
+          new Chain(this.chains[i].token, xy+1, oldEnd, newLow, oldHigh)
+        );
+      } else {
+        this.chains.splice(i+1, 0, 
+          new Chain(token, xy, xy+1, newLow, newHigh),
+          new Chain(this.chains[i].token, xy+1, oldEnd, newLow, oldHigh)
+        );
+      }
+    }
+  }
+  add(xy, token, index){
+    var i = 0;
+    while(this.chains[i].end < xy+1){
+      i++;
+    }
+    if(this.chains[i].end == xy+1){
+      this.chains[i].end--;
+      this.chains[i].highestIndex = index;
+      if(this.chains[i].start == this.chains[i].end){
+        this.chains[i] = new Chain(token, xy, xy+1, index, index);
+      } else {
+        this.chains.splice(i+1, 0, new Chain(token, xy, xy+1, index, index));
+      }
+    } else {
+      var oldEnd = this.chains[i].end;
+      var oldHigh = this.chains[i].highestIndex;
+      this.chains[i].end = xy;
+      this.chains[i].highestIndex = index;
+      if(this.chains[i].start == this.chains[i].end){
+        this.chains.splice(i, 1, 
+          new Chain(token, xy, xy+1, index, index),
+          new Chain(this.chains[i].token, xy+1, oldEnd, index, oldHigh)
+        );
+      } else {
+        this.chains.splice(i+1, 0, 
+          new Chain(token, xy, xy+1, index, index),
+          new Chain(this.chains[i].token, xy+1, oldEnd, index, oldHigh)
+        );
+      }
+    }
+  }
+}
+
+class Chain {
+  constructor(type, start, end, lowest, highest){
+    this.type = type;
+    this.start = start;
+    this.end = end;
+    this.lowestIndex = lowest;
+    this.highestIndex = highest;
   }
 }
 
@@ -343,21 +465,21 @@ function solve(){
   try{
     for(var x = 0; x < nonoWidth; x++){
       var input = document.getElementById("vert"+x).value;
-      vertLines.push(new Line(sanitizeInput(input)));
+      vertLines.push(new Line(sanitizeInput(input), ORIENTATION.VERTICAL));
     }
     for(var y = 0; y < nonoHeight; y++){
       var input = document.getElementById("hori"+y).value;
-      horiLines.push(new Line(sanitizeInput(input)));
+      horiLines.push(new Line(sanitizeInput(input), ORIENTATION.HORIZONTAL));
     }
     for(var x in vertLines){
-      placeSquares(x, 0, nonoHeight, vertLines[x].constraints);
+      placeSquares(x*1, 0, nonoHeight, vertLines[x]);
       drawGrid();
     }
     for(var y in horiLines){
-      placeSquares(0, nonoWidth, y, horiLines[y].constraints);
+      placeSquares(0, nonoWidth, y*1, horiLines[y]);
       drawGrid();
     }
-    while(canTest() > 0){
+    while(!isSolved() && canTest() > 0){
       for(var x in vertLines){
         if(vertLines[x].newInfo){
           throw "Function not yet programmed";
@@ -383,6 +505,8 @@ function solve(){
       errors.innerHTML = "Constraints given are contradictory."
     } else if(err == "overflow"){
       errors.innerHTML = "Constraints given do not fit within grid specified."
+    } else if(err == "zero"){
+      errors.innerHTML = "Input contains zero length chains."
     } else {
       errors.innerHTML = err;
     }
